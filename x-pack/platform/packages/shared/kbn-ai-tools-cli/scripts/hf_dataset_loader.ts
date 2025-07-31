@@ -7,9 +7,11 @@
 
 import { run } from '@kbn/dev-cli-runner';
 import { createKibanaClient, toolingLogToLogger } from '@kbn/kibana-api-cli';
-import { castArray, keyBy } from 'lodash';
+import { castArray } from 'lodash';
 import { loadHuggingFaceDatasets } from '../src/hf_dataset_loader/load_hugging_face_datasets';
-import { ALL_HUGGING_FACE_DATASETS } from '../src/hf_dataset_loader/config';
+import { ALL_HUGGING_FACE_DATASETS, getDatasetSpecs } from '../src/hf_dataset_loader/config';
+import { listAllOneChatDatasets } from '../src/hf_dataset_loader/onechat_datasets';
+import { HuggingFaceDatasetSpec } from '../src/hf_dataset_loader/types';
 
 interface Flags {
   // the number of rows per dataset to load into ES
@@ -51,15 +53,38 @@ run(
           .filter(Boolean)
       : undefined;
 
-    const specsByName = keyBy(ALL_HUGGING_FACE_DATASETS, (val) => val.name);
+    let specs: HuggingFaceDatasetSpec[];
 
-    const specs =
-      datasetNames?.map((name) => {
-        if (!specsByName[name]) {
-          throw new Error(`Dataset spec for ${name} not found`);
-        }
-        return specsByName[name];
-      }) ?? ALL_HUGGING_FACE_DATASETS;
+    if (datasetNames) {
+      // Use dynamic dataset loading to support OneChat datasets
+      specs = await getDatasetSpecs(datasetNames, accessToken, toolingLogToLogger({ flags, log }));
+    } else {
+      // Show available datasets and exit
+      log.info('No datasets specified. Here are the available datasets:');
+
+      // Show regular datasets
+      log.info(
+        `Available regular HuggingFace datasets: ${ALL_HUGGING_FACE_DATASETS.map(
+          (d) => d.name
+        ).join(', ')}`
+      );
+
+      // Show available OneChat datasets
+      try {
+        const oneChatDatasets = await listAllOneChatDatasets(
+          accessToken,
+          toolingLogToLogger({ flags, log })
+        );
+        log.info(`Available OneChat datasets: ${oneChatDatasets.join(', ')}`);
+      } catch (error) {
+        log.debug('Could not fetch OneChat datasets (this is normal if not using OneChat)');
+      }
+
+      log.info(
+        'Use --datasets to specify which datasets to load. Example: --datasets onechat/knowledge-base/wix_knowledge_base'
+      );
+      return; // Exit without loading anything
+    }
 
     if (!specs.length) {
       throw new Error(`No datasets to load`);
@@ -82,10 +107,15 @@ run(
       help: `
         Usage: node --require ./src/setup_node_env/index.js x-pack/platform/packages/shared/kbn-ai-tools-cli/scripts/hf_dataset_loader.ts [options]
 
-        --datasets          Comma-separated list of HuggingFace dataset names to load
+        --datasets          Comma-separated list of HuggingFace dataset names to load.
+                           For OneChat datasets, use format: onechat/<directory>/<dataset_name>
+                           Example: --datasets onechat/knowledge-base/wix_knowledge_base
         --limit             Number of rows per dataset to load into Elasticsearch
         --clear             Clear the existing indices for the specified datasets before loading
         --kibana-url        Kibana URL to connect to (bypasses auto-discovery when provided)
+        
+        OneChat datasets are loaded from the elastic/OneChatAgent repository.
+        The dataset name should match a dataset defined in <directory>/index-mappings.jsonl.
       `,
       default: {
         clear: false,

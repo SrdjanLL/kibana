@@ -29,8 +29,8 @@ export async function indexDocuments({
     esClient,
   });
 
-  logger.debug(`Indexing ${documents.length} into ${indexName}`);
-
+  logger.info(`Indexing ${documents.length} into ${indexName}`);
+  logger.info('First document: ' + inspect(documents[0], { depth: 5 }));
   await esClient.helpers.bulk<Record<string, unknown>>({
     datasource: Readable.from(documents),
     index: indexName,
@@ -39,6 +39,11 @@ export async function indexDocuments({
     flushBytes: 1024 * 128,
     onDocument: (document) => {
       const { _id, ...doc } = document;
+      if (!_id) {
+        logger.warn(
+          `Document missing _id, ${JSON.stringify(doc)}generating one for dataset ${dataset.name}`
+        );
+      }
       return [{ index: { _id: String(_id) } }, doc];
     },
     onDrop: (doc) => {

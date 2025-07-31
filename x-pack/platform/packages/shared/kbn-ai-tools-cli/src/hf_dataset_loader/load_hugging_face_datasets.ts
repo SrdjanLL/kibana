@@ -78,7 +78,9 @@ export async function loadHuggingFaceDatasets({
       })
     );
 
-    logger.debug('Generating embeddings');
+    logger.info(
+      `Generating embeddings for ${documents.length} documents in dataset ${dataset.name}`
+    );
 
     const docsWithEmbeddings = await fromCache(dataset.name, DATASET_EMBEDDINGS_CACHE, () =>
       getEmbeddings({
@@ -88,8 +90,7 @@ export async function loadHuggingFaceDatasets({
         logger,
       })
     );
-
-    logger.debug(`Indexing documents with embeddings`);
+    logger.info(`Indexing ${docsWithEmbeddings.length} documents with embeddings`);
 
     await indexDocuments({
       esClient,
@@ -98,6 +99,6 @@ export async function loadHuggingFaceDatasets({
       logger,
     });
 
-    logger.debug(`Indexed dataset`);
+    logger.info(`Indexed dataset`);
   }
 }

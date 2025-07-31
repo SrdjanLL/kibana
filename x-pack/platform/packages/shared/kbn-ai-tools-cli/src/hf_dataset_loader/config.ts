@@ -6,6 +6,7 @@
  */
 
 import type { HuggingFaceDatasetSpec } from './types';
+import { createOneChatDatasetSpec, isOneChatDataset } from './onechat_datasets';
 
 const BEIR_NAMES = [
   'trec-covid',
@@ -85,3 +86,38 @@ export const ALL_HUGGING_FACE_DATASETS: HuggingFaceDatasetSpec[] = [
   ...BEIR_DATASETS,
   ...EXTRA_DATASETS,
 ];
+
+/**
+ * Get dataset specifications, including dynamically generated OneChat datasets
+ */
+export async function getDatasetSpecs(
+  datasetNames?: string[],
+  accessToken?: string,
+  logger?: any
+): Promise<HuggingFaceDatasetSpec[]> {
+  if (!datasetNames) {
+    return ALL_HUGGING_FACE_DATASETS;
+  }
+
+  const specs: HuggingFaceDatasetSpec[] = [];
+
+  for (const name of datasetNames) {
+    if (isOneChatDataset(name)) {
+      if (!accessToken || !logger) {
+        throw new Error('Access token and logger are required for OneChat datasets');
+      }
+      const spec = await createOneChatDatasetSpec(name, accessToken, logger);
+      specs.push(spec);
+    } else {
+      // Look for static datasets
+      const staticSpec = ALL_HUGGING_FACE_DATASETS.find((spec) => spec.name === name);
+      if (staticSpec) {
+        specs.push(staticSpec);
+      } else {
+        throw new Error(`Dataset '${name}' not found`);
+      }
+    }
+  }
+
+  return specs;
+}
