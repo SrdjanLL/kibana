@@ -26,7 +26,7 @@ export function getDockerComposeYaml({ collectorConfigPath }: { collectorConfigP
         volumes:
           - ${collectorConfigPath}:/etc/otelcol-config.yml:ro
         ports:
-          - "4317:4317"
-          - "4318:4318"
+          - "4319:4317"
+          - "4320:4318"
   `);
 }
