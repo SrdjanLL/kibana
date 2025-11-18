@@ -8,7 +8,7 @@
 import type { z } from '@kbn/zod';
 import type { MessageRole } from '../chat_complete';
 import type { Model } from '../model_provider';
-import type { ToolDefinitions } from '../chat_complete/tools';
+import type { ToolDefinitions, ToolChoice } from '../chat_complete/tools';
 
 /**
  * Defines the matching criteria for a {@link PromptVersion},
@@ -83,6 +83,10 @@ export interface PromptVersion<
    * Tool definitions that will be send over to the LLM.
    */
   tools?: TTools;
+  /**
+   * The tool invocation choice for the chatComplete request.
+   */
+  toolChoice?: ToolChoice;
 }
 
 /**

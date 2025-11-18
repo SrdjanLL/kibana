@@ -48,8 +48,8 @@ export function createPromptApi({ callbackApi }: { callbackApi: ChatCompleteApiW
           'mustache' in match.template ? match.template.mustache.template : undefined;
 
         return {
-          ...rest,
           ...nextOptions,
+          ...rest,
           messages: nextOptions.messages.concat(prevMessages ?? []),
           metadata: {
             ...rest.metadata,
