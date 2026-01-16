@@ -199,7 +199,7 @@ export const evaluate = base.extend<{}, EvaluationSpecificWorkerFixtures>({
       });
 
       try {
-        await exportEvaluations(report, esClient, log);
+        await exportEvaluations(report, esClient, phoenixClient, log);
       } catch (error) {
         log.error(
           new Error(

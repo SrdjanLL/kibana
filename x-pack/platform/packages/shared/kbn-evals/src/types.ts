@@ -9,6 +9,7 @@ import type { Example } from '@arizeai/phoenix-client/dist/esm/types/datasets';
 import type {
   EvaluationResult as PhoenixEvaluationResult,
   Evaluator as PhoenixEvaluator,
+  RanExperiment,
   TaskOutput,
 } from '@arizeai/phoenix-client/dist/esm/types/experiments';
 import type { BoundInferenceClient, Model } from '@kbn/inference-common';
@@ -44,6 +45,55 @@ export interface EvaluatorParams<TExample extends Example, TTaskOutput extends T
 }
 
 export type EvaluationResult = PhoenixEvaluationResult;
+
+export interface EvaluationResultDocument {
+  '@timestamp': string;
+  run_id: string;
+  experiment_id: string;
+  repetition: number;
+  model: {
+    id: string;
+    family: string;
+    provider: string;
+  };
+  evaluator_model: {
+    id: string;
+    family: string;
+    provider: string;
+  };
+  dataset: {
+    id: string;
+    name: string;
+  };
+  example: {
+    id: string;
+    input_hash: string;
+    metadata: Example['metadata'];
+  };
+  evaluator: {
+    name: string;
+    kind: string;
+  };
+  evaluation: {
+    score: number;
+    label: string | null;
+    explanation: string | null;
+    error: string | null;
+  };
+  timing: {
+    task_start: string | null;
+    task_end: string | null;
+    evaluation_start: string | null;
+    evaluation_end: string | null;
+  };
+  trace: {
+    task_trace_id: string | null;
+    evaluation_trace_id: string | null;
+  };
+  environment: {
+    hostname: string;
+  };
+}
 
 type EvaluatorCallback<TExample extends Example, TTaskOutput extends TaskOutput> = (
   params: EvaluatorParams<TExample, TTaskOutput>
@@ -94,6 +144,7 @@ export interface EvaluationReport {
   evaluatorModel: Model;
   repetitions: number;
   runId: string;
+  experiments: RanExperiment[];
 }
 
 export interface EvaluationSpecificWorkerFixtures {

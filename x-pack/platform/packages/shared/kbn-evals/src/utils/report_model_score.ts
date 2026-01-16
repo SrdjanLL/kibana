@@ -61,12 +61,14 @@ export async function buildEvaluationReport({
     evaluatorModel,
     repetitions,
     runId: currentRunId,
+    experiments,
   };
 }
 
 export async function exportEvaluations(
   report: EvaluationReport,
   esClient: EsClient,
+  phoenixClient: KibanaPhoenixClient,
   log: SomeDevLog
 ): Promise<void> {
   if (report.datasetScoresWithStats.length === 0) {
@@ -78,13 +80,7 @@ export async function exportEvaluations(
 
   const exporter = new EvaluationScoreRepository(esClient, log);
 
-  await exporter.exportScores({
-    datasetScoresWithStats: report.datasetScoresWithStats,
-    model: report.model,
-    evaluatorModel: report.evaluatorModel,
-    runId: report.runId,
-    repetitions: report.repetitions,
-  });
+  await exporter.exportScores(report, phoenixClient);
 
   const modelId = report.model.id || 'unknown';
 
@@ -113,5 +109,6 @@ export function formatReportData(scores: EvaluationScoreDocument[]): EvaluationR
     evaluatorModel: scores[0].evaluator_model as Model,
     repetitions,
     runId: scores[0].run_id,
+    experiments: [], // Not available when reconstructing from ES
   };
 }

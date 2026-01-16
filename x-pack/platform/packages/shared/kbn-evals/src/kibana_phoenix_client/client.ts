@@ -221,4 +221,25 @@ export class KibanaPhoenixClient {
 
     return datasets;
   }
+
+  /**
+   * Fetch all examples for a dataset, including their metadata.
+   * Returns a map of exampleId -> Example for efficient lookups.
+   */
+  async getDatasetExamples(datasetId: string): Promise<Map<string, Example>> {
+    const response = await this.phoenixClient.GET('/v1/datasets/{id}/examples', {
+      params: { path: { id: datasetId } },
+    });
+
+    const examples = response.data?.data.examples ?? [];
+    const exampleMap = new Map<string, Example>();
+
+    for (const example of examples) {
+      if (example.id) {
+        exampleMap.set(example.id, example as Example);
+      }
+    }
+
+    return exampleMap;
+  }
 }
